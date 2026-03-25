@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FINOPS_ONE_PAGER_VISUAL</title>
+  <style>
+    :root { --bg: #f6f9f7; --ink: #10211b; --card: #ffffff; --muted: #41584e; --line: #d8e5dd; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Segoe UI', Tahoma, sans-serif; }
+    .page { max-width: 1200px; margin: 24px auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 30px; }
+    h1,h2,h3 { color: #0c4d36; margin-top: 24px; }
+    p, li { line-height: 1.5; }
+    pre { background: #101820; color: #dce7f7; padding: 12px; border-radius: 8px; overflow: auto; }
+    code { font-family: Consolas, monospace; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+    .mermaid { background: #fff; border: 1px solid #dbe8e0; border-radius: 10px; padding: 8px; }
+  </style>
+</head>
+<body>
+  <div class="page"><h1>FinOps Cost Optimization Engine: One-Page Visual</h1>
+<h2>Architecture View</h2>
+<pre><code class="language-mermaid">flowchart LR
+  A[Client / Presales Team] --&gt; B[Upload Portal&lt;br/&gt;PDF Invoices + Cost Explorer CSV]
+  B --&gt; C[/Analyze API/]
+
+  C --&gt; D[Invoice Parser]
+  C --&gt; E[Cost Explorer Parser]
+  D --&gt; F[Normalization Layer]
+  E --&gt; F
+
+  F --&gt; G[Deterministic Rule Engine]
+  G --&gt; H[Advanced Confidence Model]
+  G --&gt; I[Savings Estimator]
+  H --&gt; J[Confidence Dampening + Accuracy Band]
+  I --&gt; J
+
+  E --&gt; K[12-Area Deep Insight Engine]
+  J --&gt; L[Report Composer]
+  K --&gt; L
+
+  L --&gt; M[(Runtime Report Cache)]
+  M --&gt; N[/Export API/]
+  N --&gt; O[Excel Report Pack]
+
+  O --&gt; P[Executive Summary]
+  O --&gt; Q[Deep Insights]
+  O --&gt; R[Scoring Matrix]
+</code></pre>
+<hr>
+<h2>Algorithm View</h2>
+<pre><code class="language-mermaid">flowchart TD
+  S[Input Data] --&gt; T[Extract Bill + Service Signals]
+  T --&gt; U[Run 12 Optimization Heuristics]
+  U --&gt; V[Compute Confidence Score]
+
+  V --&gt; V1[Data Quality 20%]
+  V --&gt; V2[Usage Visibility 15%]
+  V --&gt; V3[Optimization Signals 25%]
+  V --&gt; V4[Commitment Coverage 15%]
+  V --&gt; V5[Historical Stability 10%]
+  V --&gt; V6[Heuristic Reliability 15%]
+
+  V6 --&gt; W[Raw Savings Estimate]
+  W --&gt; X[Apply Confidence Dampening]
+  X --&gt; Y{Confidence &lt; 60?}
+  Y -- Yes --&gt; Z[Extra 20% Reduction]
+  Y -- No --&gt; AA[No Extra Reduction]
+  Z --&gt; AB[Final Savings]
+  AA --&gt; AB
+  AB --&gt; AC[Min-Max Range&lt;br/&gt;Min=Raw*0.7, Max=Raw*1.2]
+  AC --&gt; AD[Excel Output + Presales Narrative]
+</code></pre>
+<hr>
+<h2>Prioritization Lens</h2>
+<pre><code class="language-mermaid">quadrantChart
+    title FinOps Action Prioritization (Impact vs Ease)
+    x-axis Low Ease --&gt; High Ease
+    y-axis Low Impact --&gt; High Impact
+    quadrant-1 Quick Wins
+    quadrant-2 Strategic Bets
+    quadrant-3 Backlog
+    quadrant-4 Planned Improvements
+    Idle EC2: [0.86, 0.92]
+    Unused EBS: [0.84, 0.88]
+    Unused EIP: [0.93, 0.40]
+    Old Snapshots: [0.90, 0.68]
+    EC2 Rightsizing: [0.58, 0.88]
+    Commitment (SP/RI): [0.50, 0.94]
+    S3 Tiering: [0.78, 0.72]
+</code></pre>
+<hr>
+<h2>Executive Formula Strip</h2>
+<pre><code class="language-text">Confidence =
+(DataQuality*0.20) + (Visibility*0.15) + (Signals*0.25) +
+(Commitment*0.15) + (Historical*0.10) + (Heuristic*0.15)
+
+AdjustedSavings = RawEstimatedSavings * (Confidence/100)
+If Confidence &lt; 60 =&gt; AdjustedSavings = AdjustedSavings * 0.80
+Range: Min = Raw*0.70 | Max = Raw*1.20
+</code></pre>
+</div>
+  <script type="module">
+    import mermaid from '../node_modules/mermaid/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+  </script>
+</body>
+</html>

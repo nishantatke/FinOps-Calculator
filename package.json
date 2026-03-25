@@ -1,0 +1,23 @@
+{
+  "name": "presales-finops",
+  "version": "1.0.0",
+  "description": "Presales FinOps assessment starter app",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "marked": "^17.0.5",
+    "mermaid": "^11.13.0",
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5"
+  }
+}

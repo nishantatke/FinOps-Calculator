@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinOps Invoice Upload</title>
+    <style>
+      :root {
+        --bg: #f5f8f6;
+        --ink: #11271d;
+        --muted: #557064;
+        --line: #d6e2db;
+        --panel: #fff;
+        --brand: #0a6847;
+        --brand-soft: #e6f4ee;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        color: var(--ink);
+        background: radial-gradient(circle at 85% 5%, #e6efe7 0, transparent 34%), var(--bg);
+      }
+      .wrap { max-width: 1160px; margin: 18px auto 28px; padding: 0 14px; }
+      .hero {
+        border-radius: 14px;
+        padding: 20px;
+        color: #f5fff9;
+        background: linear-gradient(130deg, #1e3a2e, #0a6847 65%);
+      }
+      .hero h1 { margin: 0; font-size: 27px; }
+      .hero p { margin: 8px 0 0; opacity: 0.92; }
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      @media (max-width: 960px) {
+        .layout { grid-template-columns: 1fr; }
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      h2 { margin: 0 0 10px; font-size: 18px; }
+      .uploader {
+        border: 2px dashed #b8ccc0;
+        border-radius: 10px;
+        padding: 14px;
+        background: #f8fcfa;
+      }
+      input[type="file"] { width: 100%; }
+      .actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .primary { background: var(--brand); color: #fff; }
+      .ghost { background: #e6ece8; }
+      .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+      .kpi {
+        border: 1px solid #d1dfd7;
+        background: var(--brand-soft);
+        border-radius: 10px;
+        padding: 10px;
+      }
+      .kpi .label { font-size: 12px; color: var(--muted); }
+      .kpi .value { font-size: 20px; font-weight: 800; margin-top: 4px; }
+      .list { margin: 0; padding-left: 18px; }
+      .list li { margin: 5px 0; }
+      .result {
+        margin-top: 10px;
+        max-height: 370px;
+        overflow: auto;
+        border-radius: 10px;
+        background: #0e1621;
+        color: #d8e5f5;
+        border: 1px solid #223246;
+        padding: 10px;
+        font-size: 12px;
+      }
+      .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #ebf5ef;
+        color: #176743;
+        border: 1px solid #cce2d5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <h1>AWS Invoice + Cost Explorer -> FinOps Recommendations -> Excel</h1>
+        <p>Upload invoice PDFs and Cost Explorer CSV exports to produce deeper optimization insights and a client-ready Excel report.</p>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <h2>1) Upload Data Sources</h2>
+          <div class="uploader">
+            <label>Invoice PDFs</label>
+            <input id="files" type="file" accept=".pdf,application/pdf" multiple />
+            <p class="note">You can upload multiple invoice PDFs.</p>
+            <label style="display:block; margin-top:10px;">Cost Explorer CSV (Optional but recommended)</label>
+            <input id="costExplorer" type="file" accept=".csv,text/csv" multiple />
+            <p class="note">Use downloaded AWS Cost Explorer CSV files for deeper optimization precision.</p>
+          </div>
+          <div class="actions">
+            <button id="analyzeBtn" class="primary">Analyze Invoices</button>
+            <button id="downloadBtn" class="ghost" disabled>Download Excel</button>
+          </div>
+          <p class="note"><span class="badge">API</span> `POST /api/invoices/analyze` and `GET /api/invoices/export/:reportId`</p>
+          <pre class="result" id="raw">Waiting for upload...</pre>
+        </article>
+
+        <article class="card">
+          <h2>2) Assessment Snapshot</h2>
+          <div class="kpis">
+            <div class="kpi">
+              <div class="label">Spend</div>
+              <div class="value" id="spend">$0</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Savings</div>
+              <div class="value" id="savings">$0</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Confidence</div>
+              <div class="value" id="confidence">-</div>
+            </div>
+          </div>
+          <h2 style="margin-top: 14px;">Scoring Matrix (Auto)</h2>
+          <ul id="actions" class="list"></ul>
+          <h2 style="margin-top: 14px;">Detected Source Files</h2>
+          <ul id="filesList" class="list"></ul>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      const state = {
+        reportId: null,
+      };
+      const el = {
+        files: document.getElementById("files"),
+        costExplorer: document.getElementById("costExplorer"),
+        analyzeBtn: document.getElementById("analyzeBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        raw: document.getElementById("raw"),
+        spend: document.getElementById("spend"),
+        savings: document.getElementById("savings"),
+        confidence: document.getElementById("confidence"),
+        actions: document.getElementById("actions"),
+        filesList: document.getElementById("filesList"),
+      };
+
+      function money(v) {
+        return `$${Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+      }
+
+      function ensureFiles() {
+        const files = el.files.files;
+        const ceFiles = el.costExplorer.files;
+        if ((!files || files.length === 0) && (!ceFiles || ceFiles.length === 0)) {
+          throw new Error("Please choose at least one PDF invoice or Cost Explorer CSV.");
+        }
+        return { files, ceFiles };
+      }
+
+      async function analyzeInvoices() {
+        try {
+          const { files, ceFiles } = ensureFiles();
+          const form = new FormData();
+          for (const file of files) form.append("invoices", file);
+          for (const file of ceFiles) form.append("costExplorer", file);
+          el.raw.textContent = "Processing invoices and Cost Explorer data...";
+
+          const res = await fetch("/api/invoices/analyze", {
+            method: "POST",
+            body: form,
+          });
+          if (!res.ok) {
+            throw new Error(await res.text());
+          }
+          const data = await res.json();
+          state.reportId = data.report_id;
+          el.downloadBtn.disabled = false;
+
+          const summary = data.analysis.report.executive_summary;
+          el.spend.textContent = money(summary.estimated_monthly_spend);
+          el.savings.textContent = money(summary.potential_savings);
+          el.confidence.textContent = `${summary.confidence_level} (${summary.confidence_score})`;
+
+          const insights = data.deep_insights || [];
+          const matrixOrder = { High: 0, Medium: 1, Low: 2 };
+          const sorted = [...insights].sort((a, b) => {
+            const pa = matrixOrder[a.opportunity_signal] ?? 3;
+            const pb = matrixOrder[b.opportunity_signal] ?? 3;
+            if (pa !== pb) return pa - pb;
+            return (b.estimated_impact_cost_usd || 0) - (a.estimated_impact_cost_usd || 0);
+          });
+          el.actions.innerHTML = sorted
+            .slice(0, 6)
+            .map(
+              (x) =>
+                `<li>${x.header} | Impact: ${x.impact} | Ease: ${x.ease_of_execution} | Priority: ${x.opportunity_signal}</li>`
+            )
+            .join("");
+
+          const uploadedInvoices = (data.uploaded_invoices || [])
+            .map((f) => `<li>Invoice: ${f.file_name} - detected total: ${money(f.detected_total_cost)}</li>`)
+            .join("");
+          const uploadedCe = (data.uploaded_cost_explorer || [])
+            .map((f) => `<li>Cost Explorer: ${f.file_name} - rows: ${f.rows}</li>`)
+            .join("");
+          el.filesList.innerHTML = uploadedInvoices + uploadedCe;
+
+          el.raw.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          state.reportId = null;
+          el.downloadBtn.disabled = true;
+          el.raw.textContent = `Error: ${err.message}`;
+        }
+      }
+
+      function downloadExcel() {
+        if (!state.reportId) return;
+        window.location.href = `/api/invoices/export/${state.reportId}`;
+      }
+
+      el.analyzeBtn.addEventListener("click", analyzeInvoices);
+      el.downloadBtn.addEventListener("click", downloadExcel);
+    </script>
+  </body>
+</html>

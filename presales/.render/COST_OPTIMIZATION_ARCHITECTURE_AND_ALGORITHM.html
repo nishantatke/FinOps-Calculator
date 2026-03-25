@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COST_OPTIMIZATION_ARCHITECTURE_AND_ALGORITHM</title>
+  <style>
+    :root { --bg: #f6f9f7; --ink: #10211b; --card: #ffffff; --muted: #41584e; --line: #d8e5dd; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Segoe UI', Tahoma, sans-serif; }
+    .page { max-width: 1200px; margin: 24px auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 30px; }
+    h1,h2,h3 { color: #0c4d36; margin-top: 24px; }
+    p, li { line-height: 1.5; }
+    pre { background: #101820; color: #dce7f7; padding: 12px; border-radius: 8px; overflow: auto; }
+    code { font-family: Consolas, monospace; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+    .mermaid { background: #fff; border: 1px solid #dbe8e0; border-radius: 10px; padding: 8px; }
+  </style>
+</head>
+<body>
+  <div class="page"><h1>Presales FinOps Cost Optimization: Architecture and Algorithm</h1>
+<p>This document explains how the current tool performs AWS cost optimization from uploaded invoices and Cost Explorer data.</p>
+<h2>1) Architecture Diagram</h2>
+<pre><code class="language-mermaid">flowchart LR
+  U[User Upload UI\nPDF Invoices + CE CSV] --&gt; API[/POST /api/invoices/analyze/]
+
+  API --&gt; P1[PDF Parser\nsrc/invoice/pdfParser.js]
+  API --&gt; P2[Cost Explorer Parser\nsrc/invoice/costExplorer.js]
+
+  P1 --&gt; N[Normalization Layer\nsrc/finops/normalize.js]
+  P2 --&gt; N
+
+  N --&gt; R[Rule Engine\nsrc/finops/rules.js]
+  R --&gt; C[Advanced Confidence Model\nsrc/finops/scoring.js]
+  R --&gt; S[Savings Estimator + Dampening\nsrc/finops/scoring.js]
+
+  C --&gt; REP[Report Builder\nsrc/finops/report.js]
+  S --&gt; REP
+  P2 --&gt; DI[Deep Insights Engine\n12 Optimization Areas]
+  DI --&gt; REP
+
+  REP --&gt; CACHE[(In-Memory Report Cache)]
+  CACHE --&gt; EX[/GET /api/invoices/export/:reportId/]
+  EX --&gt; XLSX[Excel Generator\nsrc/invoice/excelExport.js]
+  XLSX --&gt; OUT[Client-ready .xlsx Report]
+</code></pre>
+<h2>2) Algorithm Diagram</h2>
+<pre><code class="language-mermaid">flowchart TD
+  A[Start Analysis] --&gt; B[Ingest Files\nPDF + CE CSV]
+  B --&gt; C[Extract Totals/Services/Rows]
+  C --&gt; D[Build Canonical Cost Model]
+
+  D --&gt; E[Run Deterministic FinOps Rules]
+  E --&gt; E1[Compute: idle/rightsize/old gen]
+  E --&gt; E2[Storage: EBS/Snapshots/S3 tiering]
+  E --&gt; E3[Network + LB + EIP]
+  E --&gt; E4[Commitments + RDS snapshots]
+
+  E4 --&gt; F[Calculate 6-Layer Confidence]
+  F --&gt; F1[Data Quality 20%]
+  F --&gt; F2[Visibility 15%]
+  F --&gt; F3[Signals 25%]
+  F --&gt; F4[Commitment 15%]
+  F --&gt; F5[Historical 10%]
+  F --&gt; F6[Heuristic 15%]
+
+  F6 --&gt; G[Estimate Raw Savings\n(benchmarked category %)]
+  G --&gt; H[Apply Confidence Dampening\nadjusted = raw * confidence%]
+  H --&gt; I{Confidence &lt; 60?}
+  I -- Yes --&gt; J[Apply Extra -20% Penalty]
+  I -- No --&gt; K[Keep Adjusted]
+  J --&gt; L[Build Accuracy Band\nmin=raw*0.7, max=raw*1.2]
+  K --&gt; L
+
+  L --&gt; M[Generate Deep Insights\n(12 headers + trend + action)]
+  M --&gt; N[Assemble JSON Report]
+  N --&gt; O[Export Excel\nExecutive + Deep Insights + Scoring Matrix]
+  O --&gt; P[End]
+</code></pre>
+<h2>3) Confidence and Savings Logic (Implemented)</h2>
+<h3>Confidence Score</h3>
+<pre><code>Confidence =
+  (DataQuality * 0.20) +
+  (Visibility * 0.15) +
+  (Signals * 0.25) +
+  (Commitment * 0.15) +
+  (Historical * 0.10) +
+  (Heuristic * 0.15)
+</code></pre>
+<h3>Savings Adjustment</h3>
+<pre><code>AdjustedSavings = RawEstimatedSavings * (Confidence / 100)
+
+If Confidence &lt; 60:
+  AdjustedSavings = AdjustedSavings * 0.80
+
+AccuracyBand:
+  Min = RawEstimatedSavings * 0.70
+  Max = RawEstimatedSavings * 1.20
+</code></pre>
+<h2>4) 12 Optimization Areas Covered</h2>
+<ol>
+<li>EBS volumes with older generation  </li>
+<li>Unused EBS Volumes  </li>
+<li>Provisioned IOPS EBS  </li>
+<li>Old EBS Snapshots  </li>
+<li>Unused EIP  </li>
+<li>Previous Generation EC2  </li>
+<li>Idle EC2 Instances  </li>
+<li>EC2 rightsizing  </li>
+<li>Unused/Idle Load balancers  </li>
+<li>Commitment (Savings Plans/RI)  </li>
+<li>RDS Manual Snapshot Deletion  </li>
+<li>S3 Teiring</li>
+</ol>
+<h2>5) Where to Extend Next</h2>
+<ul>
+<li>Add CloudWatch utilization import (for stronger EC2/RDS confidence)</li>
+<li>Add resource-level action sheet (instance/volume IDs) in Excel</li>
+<li>Add implementation owner/status tracking sheet for delivery governance</li>
+</ul>
+</div>
+  <script type="module">
+    import mermaid from '../node_modules/mermaid/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+  </script>
+</body>
+</html>
